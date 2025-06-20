@@ -8,12 +8,12 @@ Visit the live application at: https://aniket-borkar.github.io/CryptoTracker/
 
 ## ✨ Unique Features
 
-### 1. **Cryptocurrency Constellation Map** 🌟
-- View cryptocurrencies as stars in a 3D interactive constellation
-- Star size represents market cap
-- Color indicates 24h price change
-- Position shows market relationships
-- Fully interactive 3D navigation
+### 1. **Cryptocurrency Galaxy** 🌟
+- Revolutionary 3D visualization with improved spiral galaxy layout
+- Interactive stars with trailing effects and energy fields
+- Dynamic connections based on market cap relationships
+- Floating icosahedron shapes with real-time price displays
+- Full 3D navigation with zoom, pan, and auto-rotation
 
 ### 2. **Market Mood Ring** 🌈
 - Revolutionary visualization of overall market sentiment
@@ -21,13 +21,25 @@ Visit the live application at: https://aniket-borkar.github.io/CryptoTracker/
 - Real-time sentiment analysis (Euphoric, Bullish, Neutral, Bearish, Fearful)
 - Pulsating animations that reflect market volatility
 
-### 3. **Price Rhythm Visualizer** 🎵
+### 3. **Crypto Pulse Monitor** 💓 **[NEW]**
+- First-ever market heartbeat visualization
+- Real-time EKG-style waveform showing market vitals
+- Track market health with BPM (volatility), blood pressure (volume), energy levels, and momentum
+- Medical-grade visualization that makes market health instantly understandable
+
+### 4. **Crypto Weather Forecast** 🌤️ **[NEW]**
+- Groundbreaking weather metaphor for market conditions
+- Current conditions with animated weather effects (sun, rain, storms)
+- 5-day market forecast based on trend analysis
+- Wind speed (volatility), humidity (bearish pressure), and visibility metrics
+
+### 5. **Price Rhythm Visualizer** 🎵
 - Converts price movements into mesmerizing visual frequencies
 - Experience market volatility as animated waveforms
 - Color-coded frequency bars showing price momentum
 - Real-time animation based on 7-day price data
 
-### 4. **Global Market Dashboard** 📊
+### 6. **Global Market Dashboard** 📊
 - Beautiful glassmorphic design with real-time statistics
 - Market dominance visualization
 - Fear & Greed Index representation
