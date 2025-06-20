@@ -1,14 +1,17 @@
 import React, { useRef, useMemo, useState } from 'react'
 import { Canvas, useFrame, extend } from '@react-three/fiber'
-import { OrbitControls, Text, Trail, Float, Stars } from '@react-three/drei'
+import { OrbitControls, Text, Trail, Float, Stars, Html } from '@react-three/drei'
 import * as THREE from 'three'
+import { motion, AnimatePresence } from 'framer-motion'
+import { Info, ZoomIn, ZoomOut, RotateCw, Move3d, X } from 'lucide-react'
 import useStore from '../utils/store'
-import { dataToConstellation, formatNumber, formatPercentage } from '../utils/helpers'
+import { dataToConstellation, formatNumber, formatPercentage, getPriceChangeColor } from '../utils/helpers'
 
-const CryptoNode = ({ data, onClick }) => {
+const CryptoNode = ({ data, onClick, selectedId }) => {
   const meshRef = useRef()
   const [hovered, setHovered] = useState(false)
   const [clicked, setClicked] = useState(false)
+  const isSelected = selectedId === data.id
   
   useFrame((state) => {
     if (meshRef.current) {
@@ -17,7 +20,7 @@ const CryptoNode = ({ data, onClick }) => {
       // Pulsating effect based on volume
       const pulseFactor = 1 + Math.sin(state.clock.elapsedTime * 2) * 0.1
       
-      if (hovered) {
+      if (hovered || isSelected) {
         meshRef.current.scale.lerp(new THREE.Vector3(1.5, 1.5, 1.5).multiplyScalar(pulseFactor), 0.1)
       } else {
         meshRef.current.scale.lerp(new THREE.Vector3(1, 1, 1).multiplyScalar(pulseFactor), 0.1)
@@ -51,53 +54,77 @@ const CryptoNode = ({ data, onClick }) => {
             <meshStandardMaterial
               color={data.color}
               emissive={data.color}
-              emissiveIntensity={hovered ? 0.8 : 0.5}
+              emissiveIntensity={hovered || isSelected ? 0.8 : 0.5}
               metalness={0.8}
               roughness={0.2}
               wireframe={clicked}
             />
           </mesh>
         </Trail>
-        {hovered && (
-          <>
-            <Text
-              position={[0, 2, 0]}
-              fontSize={0.5}
-              color="white"
-              anchorX="center"
-              anchorY="middle"
-              outlineWidth={0.05}
-              outlineColor={data.color}
-            >
-              {data.symbol.toUpperCase()}
-            </Text>
-            <Text
-              position={[0, 1.5, 0]}
-              fontSize={0.3}
-              color="white"
-              anchorX="center"
-              anchorY="middle"
-            >
-              {formatNumber(data.price)}
-            </Text>
-            <Text
-              position={[0, 1, 0]}
-              fontSize={0.25}
-              color={data.change >= 0 ? '#00ff88' : '#ff4444'}
-              anchorX="center"
-              anchorY="middle"
-            >
-              {formatPercentage(data.change)}
-            </Text>
-          </>
+        
+        {/* Always show label for top 10 coins */}
+        {data.marketCapRank <= 10 && !hovered && (
+          <Html
+            position={[0, data.size + 1, 0]}
+            center
+            style={{
+              transition: 'all 0.2s',
+              opacity: 0.8,
+              fontSize: '12px',
+              fontWeight: 'bold',
+              color: 'white',
+              textShadow: '0 0 10px rgba(0,0,0,0.8)',
+              pointerEvents: 'none'
+            }}
+          >
+            {data.symbol.toUpperCase()}
+          </Html>
         )}
+        
+        {/* Detailed info on hover */}
+        {hovered && (
+          <Html
+            position={[0, 3, 0]}
+            center
+            style={{
+              transition: 'all 0.2s',
+              pointerEvents: 'none'
+            }}
+          >
+            <div className="bg-black/90 rounded-lg p-3 text-white text-sm backdrop-blur-sm border border-white/20">
+              <div className="font-bold text-lg mb-1">{data.name}</div>
+              <div className="opacity-80 mb-2">{data.symbol.toUpperCase()}</div>
+              <div className="space-y-1">
+                <div className="flex justify-between gap-4">
+                  <span className="opacity-60">Rank:</span>
+                  <span>#{data.marketCapRank}</span>
+                </div>
+                <div className="flex justify-between gap-4">
+                  <span className="opacity-60">Price:</span>
+                  <span>{formatNumber(data.price)}</span>
+                </div>
+                <div className="flex justify-between gap-4">
+                  <span className="opacity-60">24h:</span>
+                  <span className={data.change >= 0 ? 'text-green-400' : 'text-red-400'}>
+                    {formatPercentage(data.change)}
+                  </span>
+                </div>
+                <div className="flex justify-between gap-4">
+                  <span className="opacity-60">MCap:</span>
+                  <span>{formatNumber(data.marketCap)}</span>
+                </div>
+              </div>
+            </div>
+          </Html>
+        )}
+        
         {/* Energy field */}
         <mesh scale={[2, 2, 2]}>
           <sphereGeometry args={[1, 16, 16]} />
           <meshStandardMaterial
             color={data.color}
             transparent
-            opacity={hovered ? 0.3 : 0.1}
+            opacity={hovered || isSelected ? 0.3 : 0.1}
             emissive={data.color}
             emissiveIntensity={0.5}
           />
@@ -175,8 +202,14 @@ const ConstellationLines = ({ nodes }) => {
 }
 
 const CryptoConstellation = () => {
-  const { cryptoData, setSelectedCrypto } = useStore()
-  const constellationData = useMemo(() => dataToConstellation(cryptoData), [cryptoData])
+  const { cryptoData, setSelectedCrypto, selectedCrypto } = useStore()
+  const [showInfo, setShowInfo] = useState(true)
+  const constellationData = useMemo(() => {
+    return dataToConstellation(cryptoData).map((node, index) => ({
+      ...node,
+      marketCapRank: index + 1
+    }))
+  }, [cryptoData])
   
   return (
     <div className="w-full h-screen relative">
@@ -204,6 +237,7 @@ const CryptoConstellation = () => {
               key={data.id}
               data={data}
               onClick={setSelectedCrypto}
+              selectedId={selectedCrypto?.id}
             />
           ))}
           <ConstellationLines nodes={constellationData} />
@@ -234,27 +268,161 @@ const CryptoConstellation = () => {
         <fog attach="fog" args={['#000814', 20, 60]} />
       </Canvas>
       
-      <div className="absolute top-8 left-8 glass rounded-2xl p-6 max-w-md">
-        <h2 className="text-2xl font-bold mb-2 text-glow">Crypto Galaxy</h2>
-        <p className="text-sm opacity-70">
-          Navigate through the cryptocurrency universe. Each star represents a coin, 
-          with size showing market cap and position indicating market relationships.
-        </p>
-        <div className="mt-4 grid grid-cols-3 gap-2 text-xs">
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 bg-green-400 rounded-full"></div>
-            <span>Rising</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 bg-red-400 rounded-full"></div>
-            <span>Falling</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 bg-yellow-400 rounded-full"></div>
-            <span>Stable</span>
-          </div>
-        </div>
-      </div>
+      {/* Info Panel */}
+      <AnimatePresence>
+        {showInfo && (
+          <motion.div
+            initial={{ x: -300, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            exit={{ x: -300, opacity: 0 }}
+            className="absolute top-8 left-8 glass rounded-2xl p-6 max-w-sm"
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-2xl font-bold text-glow">Crypto Galaxy</h2>
+              <button
+                onClick={() => setShowInfo(false)}
+                className="text-white/60 hover:text-white transition-colors"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            
+            <div className="space-y-4">
+              <p className="text-sm opacity-80">
+                Explore the cryptocurrency universe in 3D. Each star represents a cryptocurrency, 
+                with relationships based on market dynamics.
+              </p>
+              
+              {/* Visual Legend */}
+              <div className="space-y-3">
+                <h3 className="font-semibold text-sm">Visual Guide</h3>
+                <div className="grid grid-cols-2 gap-3 text-xs">
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 rounded-full bg-gradient-to-r from-green-400 to-green-600"></div>
+                    <span>Rising (Gains)</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 rounded-full bg-gradient-to-r from-red-400 to-red-600"></div>
+                    <span>Falling (Losses)</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-6 h-6 rounded-full bg-white/20"></div>
+                    <span>Large Cap</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full bg-white/20"></div>
+                    <span>Small Cap</span>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Controls */}
+              <div className="space-y-3">
+                <h3 className="font-semibold text-sm">Navigation</h3>
+                <div className="space-y-2 text-xs">
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center justify-center w-8 h-8 rounded bg-white/10">
+                      <Move3d size={16} />
+                    </div>
+                    <span>Click & drag to rotate</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center justify-center w-8 h-8 rounded bg-white/10">
+                      <ZoomIn size={16} />
+                    </div>
+                    <span>Scroll to zoom in/out</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center justify-center w-8 h-8 rounded bg-white/10">
+                      <RotateCw size={16} />
+                    </div>
+                    <span>Auto-rotating view</span>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Stats */}
+              <div className="border-t border-white/10 pt-3">
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div>
+                    <span className="opacity-60">Coins Shown:</span>
+                    <span className="ml-2 font-semibold">{constellationData.length}</span>
+                  </div>
+                  <div>
+                    <span className="opacity-60">Connections:</span>
+                    <span className="ml-2 font-semibold">Dynamic</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      
+      {/* Toggle Info Button */}
+      {!showInfo && (
+        <motion.button
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          onClick={() => setShowInfo(true)}
+          className="absolute top-8 left-8 glass rounded-full p-3 hover:bg-white/20 transition-colors"
+        >
+          <Info size={20} />
+        </motion.button>
+      )}
+      
+      {/* Selected Crypto Detail Panel */}
+      <AnimatePresence>
+        {selectedCrypto && (
+          <motion.div
+            initial={{ y: 100, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 100, opacity: 0 }}
+            className="absolute bottom-8 left-1/2 transform -translate-x-1/2 glass rounded-2xl p-6 max-w-lg"
+          >
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <img 
+                  src={selectedCrypto.image} 
+                  alt={selectedCrypto.name}
+                  className="w-10 h-10 rounded-full"
+                />
+                <div>
+                  <h3 className="text-xl font-bold">{selectedCrypto.name}</h3>
+                  <p className="text-sm opacity-70">{selectedCrypto.symbol?.toUpperCase()}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setSelectedCrypto(null)}
+                className="text-white/60 hover:text-white transition-colors"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div>
+                <p className="text-xs opacity-60">Price</p>
+                <p className="text-lg font-semibold">{formatNumber(selectedCrypto.current_price)}</p>
+              </div>
+              <div>
+                <p className="text-xs opacity-60">24h Change</p>
+                <p className={`text-lg font-semibold ${selectedCrypto.price_change_percentage_24h >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                  {formatPercentage(selectedCrypto.price_change_percentage_24h)}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs opacity-60">Market Cap</p>
+                <p className="text-lg font-semibold">{formatNumber(selectedCrypto.market_cap)}</p>
+              </div>
+              <div>
+                <p className="text-xs opacity-60">Volume 24h</p>
+                <p className="text-lg font-semibold">{formatNumber(selectedCrypto.total_volume)}</p>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }
