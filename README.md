@@ -4,7 +4,7 @@ An extraordinary cryptocurrency visualization platform that presents market tren
 
 ## 🚀 Live Demo
 
-Visit the live application at: https://[your-github-username].github.io/CryptoTracker/
+Visit the live application at: https://aniket-borkar.github.io/CryptoTracker/
 
 ## ✨ Unique Features
 
