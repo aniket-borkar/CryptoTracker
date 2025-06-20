@@ -1,13 +1,13 @@
 import React, { useRef, useMemo, useState } from 'react'
 import { Canvas, useFrame, extend } from '@react-three/fiber'
-import { OrbitControls, Text, Trail, Float, Stars, Html } from '@react-three/drei'
+import { OrbitControls, Text, Trail, Float, Stars, Html, Line } from '@react-three/drei'
 import * as THREE from 'three'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Info, ZoomIn, ZoomOut, RotateCw, Move3d, X } from 'lucide-react'
+import { Info, ZoomIn, ZoomOut, RotateCw, Move3d, X, GitBranch, Layers } from 'lucide-react'
 import useStore from '../utils/store'
 import { dataToConstellation, formatNumber, formatPercentage, getPriceChangeColor } from '../utils/helpers'
 
-const CryptoNode = ({ data, onClick, selectedId }) => {
+const CryptoNode = ({ data, onClick, selectedId, showConnections }) => {
   const meshRef = useRef()
   const [hovered, setHovered] = useState(false)
   const [clicked, setClicked] = useState(false)
@@ -134,68 +134,84 @@ const CryptoNode = ({ data, onClick, selectedId }) => {
   )
 }
 
-const ConstellationLines = ({ nodes }) => {
+const ConstellationLines = ({ nodes, showType = 'market-cap' }) => {
   const lines = useMemo(() => {
     const connections = []
     const processed = new Set()
     
     nodes.forEach((node, i) => {
-      // Connect to nearest neighbors based on market cap similarity
-      const neighbors = nodes
-        .map((other, j) => ({
-          node: other,
-          index: j,
-          distance: Math.sqrt(
-            Math.pow(node.x - other.x, 2) +
-            Math.pow(node.y - other.y, 2) +
-            Math.pow(node.z - other.z, 2)
-          ),
-          marketCapDiff: Math.abs(Math.log(node.marketCap) - Math.log(other.marketCap))
-        }))
-        .filter(({ index, marketCapDiff }) => 
-          index !== i && 
-          !processed.has(`${Math.min(i, index)}-${Math.max(i, index)}`) &&
-          marketCapDiff < 1.5
-        )
-        .sort((a, b) => a.distance - b.distance)
-        .slice(0, 3)
-      
-      neighbors.forEach(({ node: otherNode, index: j }) => {
-        const key = `${Math.min(i, j)}-${Math.max(i, j)}`
-        if (!processed.has(key)) {
-          processed.add(key)
-          connections.push([
-            new THREE.Vector3(node.x, node.y, node.z),
-            new THREE.Vector3(otherNode.x, otherNode.y, otherNode.z)
-          ])
-        }
-      })
+      if (showType === 'market-cap') {
+        // Connect coins with similar market caps
+        const neighbors = nodes
+          .map((other, j) => ({
+            node: other,
+            index: j,
+            distance: Math.sqrt(
+              Math.pow(node.x - other.x, 2) +
+              Math.pow(node.y - other.y, 2) +
+              Math.pow(node.z - other.z, 2)
+            ),
+            marketCapDiff: Math.abs(Math.log(node.marketCap) - Math.log(other.marketCap))
+          }))
+          .filter(({ index, marketCapDiff }) => 
+            index !== i && 
+            !processed.has(`${Math.min(i, index)}-${Math.max(i, index)}`) &&
+            marketCapDiff < 1.5
+          )
+          .sort((a, b) => a.distance - b.distance)
+          .slice(0, 3)
+        
+        neighbors.forEach(({ node: otherNode, index: j }) => {
+          const key = `${Math.min(i, j)}-${Math.max(i, j)}`
+          if (!processed.has(key)) {
+            processed.add(key)
+            connections.push({
+              points: [
+                new THREE.Vector3(node.x, node.y, node.z),
+                new THREE.Vector3(otherNode.x, otherNode.y, otherNode.z)
+              ],
+              strength: 1 - (Math.abs(Math.log(node.marketCap) - Math.log(otherNode.marketCap)) / 1.5),
+              type: 'market-cap'
+            })
+          }
+        })
+      } else if (showType === 'correlation') {
+        // Connect coins that move together
+        nodes.slice(i + 1).forEach((otherNode, j) => {
+          const actualJ = i + j + 1
+          if (Math.abs(node.change - otherNode.change) < 5) {
+            connections.push({
+              points: [
+                new THREE.Vector3(node.x, node.y, node.z),
+                new THREE.Vector3(otherNode.x, otherNode.y, otherNode.z)
+              ],
+              strength: 1 - Math.abs(node.change - otherNode.change) / 5,
+              type: 'correlation'
+            })
+          }
+        })
+      }
     })
     
     return connections
-  }, [nodes])
+  }, [nodes, showType])
   
   return (
     <>
-      {lines.map((points, index) => (
-        <line key={index}>
-          <bufferGeometry>
-            <bufferAttribute
-              attach="attributes-position"
-              count={2}
-              array={new Float32Array(points.flatMap(p => [p.x, p.y, p.z]))}
-              itemSize={3}
-            />
-          </bufferGeometry>
-          <lineBasicMaterial 
-            color="#ffffff" 
-            opacity={0.15} 
-            transparent 
-            linewidth={1}
-            linecap="round"
-            linejoin="round"
-          />
-        </line>
+      {lines.map((connection, index) => (
+        <Line
+          key={index}
+          points={connection.points}
+          color={
+            connection.type === 'correlation' 
+              ? '#00ff88' 
+              : '#ffffff'
+          }
+          lineWidth={connection.strength * 2}
+          opacity={connection.strength * 0.3}
+          transparent
+          dashed={connection.type === 'correlation'}
+        />
       ))}
     </>
   )
@@ -204,6 +220,9 @@ const ConstellationLines = ({ nodes }) => {
 const CryptoConstellation = () => {
   const { cryptoData, setSelectedCrypto, selectedCrypto } = useStore()
   const [showInfo, setShowInfo] = useState(true)
+  const [connectionType, setConnectionType] = useState('market-cap')
+  const [showConnections, setShowConnections] = useState(true)
+  
   const constellationData = useMemo(() => {
     return dataToConstellation(cryptoData).map((node, index) => ({
       ...node,
@@ -238,9 +257,12 @@ const CryptoConstellation = () => {
               data={data}
               onClick={setSelectedCrypto}
               selectedId={selectedCrypto?.id}
+              showConnections={showConnections}
             />
           ))}
-          <ConstellationLines nodes={constellationData} />
+          {showConnections && (
+            <ConstellationLines nodes={constellationData} showType={connectionType} />
+          )}
         </group>
         
         {/* Central energy core */}
@@ -293,25 +315,83 @@ const CryptoConstellation = () => {
                 with relationships based on market dynamics.
               </p>
               
+              {/* Connection Controls */}
+              <div className="space-y-3">
+                <h3 className="font-semibold text-sm flex items-center gap-2">
+                  <GitBranch size={16} />
+                  Connection Types
+                </h3>
+                <div className="space-y-2">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={showConnections}
+                      onChange={(e) => setShowConnections(e.target.checked)}
+                      className="rounded"
+                    />
+                    <span className="text-xs">Show Connections</span>
+                  </label>
+                  <div className="ml-6 space-y-1">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="connectionType"
+                        value="market-cap"
+                        checked={connectionType === 'market-cap'}
+                        onChange={(e) => setConnectionType(e.target.value)}
+                        disabled={!showConnections}
+                      />
+                      <span className="text-xs">Similar Market Cap (White)</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="connectionType"
+                        value="correlation"
+                        checked={connectionType === 'correlation'}
+                        onChange={(e) => setConnectionType(e.target.value)}
+                        disabled={!showConnections}
+                      />
+                      <span className="text-xs">Price Correlation (Green)</span>
+                    </label>
+                  </div>
+                </div>
+                <p className="text-xs opacity-60 mt-2">
+                  {connectionType === 'market-cap' 
+                    ? "Lines connect coins with similar market capitalizations"
+                    : "Lines connect coins moving in the same direction"}
+                </p>
+              </div>
+              
               {/* Visual Legend */}
               <div className="space-y-3">
-                <h3 className="font-semibold text-sm">Visual Guide</h3>
-                <div className="grid grid-cols-2 gap-3 text-xs">
-                  <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 rounded-full bg-gradient-to-r from-green-400 to-green-600"></div>
-                    <span>Rising (Gains)</span>
+                <h3 className="font-semibold text-sm flex items-center gap-2">
+                  <Layers size={16} />
+                  Visual Guide
+                </h3>
+                <div className="space-y-2 text-xs">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 rounded-full bg-gradient-to-r from-green-400 to-green-600"></div>
+                      <span>Rising (Gains)</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 rounded-full bg-gradient-to-r from-red-400 to-red-600"></div>
+                      <span>Falling (Losses)</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 rounded-full bg-white/20"></div>
+                      <span>Large Cap</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded-full bg-white/20"></div>
+                      <span>Small Cap</span>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 rounded-full bg-gradient-to-r from-red-400 to-red-600"></div>
-                    <span>Falling (Losses)</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-6 h-6 rounded-full bg-white/20"></div>
-                    <span>Large Cap</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded-full bg-white/20"></div>
-                    <span>Small Cap</span>
+                  <div className="border-t border-white/10 pt-2 space-y-1">
+                    <p className="opacity-80">• Distance from center = Market cap ranking</p>
+                    <p className="opacity-80">• Vertical position = Price change intensity</p>
+                    <p className="opacity-80">• Star trails = Recent movement</p>
                   </div>
                 </div>
               </div>
@@ -350,7 +430,9 @@ const CryptoConstellation = () => {
                   </div>
                   <div>
                     <span className="opacity-60">Connections:</span>
-                    <span className="ml-2 font-semibold">Dynamic</span>
+                    <span className="ml-2 font-semibold">
+                      {connectionType === 'market-cap' ? 'Market Cap' : 'Correlation'}
+                    </span>
                   </div>
                 </div>
               </div>
