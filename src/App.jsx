@@ -8,6 +8,8 @@ import CryptoConstellation from './components/CryptoConstellation'
 import MarketMoodRing from './components/MarketMoodRing'
 import CryptoGrid from './components/CryptoGrid'
 import GlobalStats from './components/GlobalStats'
+import CryptoPulse from './components/CryptoPulse'
+import CryptoWeather from './components/CryptoWeather'
 
 function App() {
   const [activeView, setActiveView] = useState('constellation')
@@ -47,6 +49,30 @@ function App() {
               className="flex items-center justify-center min-h-[calc(100vh-8rem)]"
             >
               <MarketMoodRing />
+            </motion.div>
+          </div>
+        )
+      case 'pulse':
+        return (
+          <div className="container mx-auto px-6 py-24">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.5 }}
+            >
+              <CryptoPulse />
+            </motion.div>
+          </div>
+        )
+      case 'weather':
+        return (
+          <div className="container mx-auto px-6 py-24">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.5 }}
+            >
+              <CryptoWeather />
             </motion.div>
           </div>
         )

@@ -1,13 +1,15 @@
 import React from 'react'
 import { motion } from 'framer-motion'
-import { Sparkles, BarChart3, Globe, Activity } from 'lucide-react'
+import { Sparkles, BarChart3, Globe, Activity, Heart, CloudSun } from 'lucide-react'
 
 const Header = ({ activeView, setActiveView }) => {
   const navItems = [
-    { id: 'constellation', label: 'Constellation', icon: Sparkles },
-    { id: 'mood', label: 'Market Mood', icon: Activity },
+    { id: 'constellation', label: 'Galaxy', icon: Sparkles },
+    { id: 'mood', label: 'Mood Ring', icon: Activity },
+    { id: 'pulse', label: 'Pulse', icon: Heart },
+    { id: 'weather', label: 'Weather', icon: CloudSun },
     { id: 'grid', label: 'Overview', icon: BarChart3 },
-    { id: 'global', label: 'Global Stats', icon: Globe },
+    { id: 'global', label: 'Global', icon: Globe },
   ]
   
   return (
@@ -31,14 +33,14 @@ const Header = ({ activeView, setActiveView }) => {
             </h1>
           </motion.div>
           
-          <nav className="flex items-center gap-2">
+          <nav className="flex items-center gap-1 flex-wrap">
             {navItems.map((item) => {
               const Icon = item.icon
               return (
                 <motion.button
                   key={item.id}
                   onClick={() => setActiveView(item.id)}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${
+                  className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all ${
                     activeView === item.id
                       ? 'bg-white/20 text-white'
                       : 'text-white/70 hover:text-white hover:bg-white/10'
@@ -47,7 +49,7 @@ const Header = ({ activeView, setActiveView }) => {
                   whileTap={{ scale: 0.95 }}
                 >
                   <Icon size={18} />
-                  <span className="hidden md:inline">{item.label}</span>
+                  <span className="hidden lg:inline text-sm">{item.label}</span>
                 </motion.button>
               )
             })}

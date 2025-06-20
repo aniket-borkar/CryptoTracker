@@ -51,21 +51,41 @@ export const generateStars = (count = 200) => {
 
 // Convert crypto data to constellation points
 export const dataToConstellation = (cryptoData) => {
-  return cryptoData.slice(0, 20).map((crypto, index) => {
-    const angle = (index / 20) * Math.PI * 2
-    const radius = Math.log(crypto.market_cap) / 10
+  return cryptoData.slice(0, 30).map((crypto, index) => {
+    // Create a more dynamic 3D spiral galaxy layout
+    const goldenRatio = 1.618
+    const angleStep = Math.PI * 2 * goldenRatio
+    const angle = index * angleStep
+    
+    // Use market cap for distance from center (logarithmic scale)
+    const marketCapNorm = Math.log(crypto.market_cap) / Math.log(cryptoData[0].market_cap)
+    const radius = 2 + marketCapNorm * 15
+    
+    // Create vertical variation based on price change
+    const priceChange = crypto.price_change_percentage_24h || 0
+    const height = (priceChange / 100) * 5
+    
+    // Add some randomness for organic feel
+    const noise = {
+      x: (Math.random() - 0.5) * 2,
+      y: (Math.random() - 0.5) * 2,
+      z: (Math.random() - 0.5) * 2
+    }
+    
     return {
       id: crypto.id,
       name: crypto.name,
       symbol: crypto.symbol,
-      x: Math.cos(angle) * radius,
-      y: Math.sin(angle) * radius,
-      z: (crypto.price_change_percentage_24h || 0) / 10,
-      size: Math.log(crypto.market_cap) / 20,
+      x: Math.cos(angle) * radius + noise.x,
+      y: height + Math.sin(index * 0.3) * 2 + noise.y,
+      z: Math.sin(angle) * radius + noise.z,
+      size: 0.3 + (marketCapNorm * 0.7),
       color: getPriceChangeColor(crypto.price_change_percentage_24h || 0),
       marketCap: crypto.market_cap,
       price: crypto.current_price,
-      change: crypto.price_change_percentage_24h
+      change: crypto.price_change_percentage_24h,
+      volume: crypto.total_volume,
+      sparkline: crypto.sparkline_in_7d
     }
   })
 }
