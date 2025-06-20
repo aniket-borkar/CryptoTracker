@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
-import { Activity, Heart, Zap, TrendingUp } from 'lucide-react'
+import { Activity, TrendingUp, DollarSign, BarChart3, Zap } from 'lucide-react'
 import useStore from '../utils/store'
 import { formatNumber, formatPercentage } from '../utils/helpers'
 
@@ -8,27 +8,28 @@ const CryptoPulse = () => {
   const canvasRef = useRef(null)
   const { cryptoData } = useStore()
   const [marketVitals, setMarketVitals] = useState({
-    heartRate: 0,
-    pressure: 0,
-    energy: 0,
-    momentum: 0
+    volatilityIndex: 0,
+    liquidityFlow: 0,
+    momentumStrength: 0,
+    marketDominance: 0
   })
   const animationRef = useRef()
   
   useEffect(() => {
     if (cryptoData.length === 0) return
     
-    // Calculate market vitals
+    // Calculate financial market vitals
     const totalVolume = cryptoData.reduce((sum, crypto) => sum + crypto.total_volume, 0)
-    const avgChange = cryptoData.reduce((sum, crypto) => sum + Math.abs(crypto.price_change_percentage_24h || 0), 0) / cryptoData.length
-    const positiveCoins = cryptoData.filter(crypto => crypto.price_change_percentage_24h > 0).length
-    const momentum = (positiveCoins / cryptoData.length) * 100
+    const totalMarketCap = cryptoData.reduce((sum, crypto) => sum + crypto.market_cap, 0)
+    const avgVolatility = cryptoData.reduce((sum, crypto) => sum + Math.abs(crypto.price_change_percentage_24h || 0), 0) / cryptoData.length
+    const bullishCoins = cryptoData.filter(crypto => crypto.price_change_percentage_24h > 0).length
+    const topCoinsDominance = cryptoData.slice(0, 5).reduce((sum, crypto) => sum + crypto.market_cap, 0) / totalMarketCap * 100
     
     setMarketVitals({
-      heartRate: Math.min(60 + avgChange * 10, 180), // BPM based on volatility
-      pressure: Math.min(totalVolume / 1e12, 200), // Blood pressure based on volume
-      energy: avgChange * 10, // Energy level
-      momentum: momentum // Bull/bear momentum
+      volatilityIndex: Math.min(avgVolatility * 5, 100), // VIX-like scale 0-100
+      liquidityFlow: Math.min((totalVolume / totalMarketCap) * 100, 100), // Volume/MarketCap ratio
+      momentumStrength: (bullishCoins / cryptoData.length) * 100, // Bull/Bear ratio
+      marketDominance: topCoinsDominance // Top 5 dominance percentage
     })
   }, [cryptoData])
   
@@ -49,26 +50,30 @@ const CryptoPulse = () => {
       ctx.fillStyle = 'rgba(0, 8, 20, 0.1)'
       ctx.fillRect(0, 0, width, height)
       
-      // Generate heartbeat pattern
+      // Generate market pulse pattern based on volatility
       x += 2
       const baseY = height / (2 * window.devicePixelRatio)
       let y = baseY
       
-      // Create realistic heartbeat waveform
+      // Create market rhythm waveform
       const t = x * 0.02
-      const heartbeat = Math.sin(t * marketVitals.heartRate / 60) * 20
-      const spike = (x % 60 < 5) ? Math.sin((x % 60) / 5 * Math.PI) * 40 : 0
+      const volatilityWave = Math.sin(t * (marketVitals.volatilityIndex / 20)) * (marketVitals.volatilityIndex / 2)
+      const liquidityPulse = (x % 80 < 10) ? Math.sin((x % 80) / 10 * Math.PI) * (marketVitals.liquidityFlow / 2) : 0
       
-      y = baseY - heartbeat - spike
+      y = baseY - volatilityWave - liquidityPulse
       
       points.push({ x, y })
       if (points.length > maxPoints) points.shift()
       
-      // Draw the pulse line
-      ctx.strokeStyle = marketVitals.momentum > 50 ? '#00ff88' : '#ff4444'
+      // Draw the market pulse line
+      const gradient = ctx.createLinearGradient(0, 0, width, 0)
+      gradient.addColorStop(0, marketVitals.momentumStrength > 50 ? '#00ff88' : '#ff4444')
+      gradient.addColorStop(1, marketVitals.momentumStrength > 50 ? '#00cc66' : '#cc3333')
+      
+      ctx.strokeStyle = gradient
       ctx.lineWidth = 2
       ctx.shadowBlur = 10
-      ctx.shadowColor = ctx.strokeStyle
+      ctx.shadowColor = marketVitals.momentumStrength > 50 ? '#00ff88' : '#ff4444'
       
       ctx.beginPath()
       points.forEach((point, i) => {
@@ -81,7 +86,7 @@ const CryptoPulse = () => {
       })
       ctx.stroke()
       
-      // Draw grid
+      // Draw trading grid
       ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)'
       ctx.lineWidth = 1
       ctx.shadowBlur = 0
@@ -114,27 +119,29 @@ const CryptoPulse = () => {
   
   const getVitalStatus = (vital, value) => {
     switch (vital) {
-      case 'heartRate':
-        if (value < 80) return { status: 'Calm', color: '#22c55e' }
-        if (value < 120) return { status: 'Active', color: '#3b82f6' }
-        if (value < 150) return { status: 'Excited', color: '#f59e0b' }
-        return { status: 'Critical', color: '#ef4444' }
-      case 'pressure':
-        if (value < 50) return { status: 'Low', color: '#3b82f6' }
-        if (value < 120) return { status: 'Normal', color: '#22c55e' }
-        if (value < 160) return { status: 'High', color: '#f59e0b' }
-        return { status: 'Extreme', color: '#ef4444' }
-      case 'energy':
-        if (value < 20) return { status: 'Low', color: '#6b7280' }
-        if (value < 50) return { status: 'Moderate', color: '#3b82f6' }
-        if (value < 80) return { status: 'High', color: '#22c55e' }
-        return { status: 'Surge', color: '#f59e0b' }
-      case 'momentum':
-        if (value < 30) return { status: 'Bearish', color: '#ef4444' }
-        if (value < 45) return { status: 'Cautious', color: '#f59e0b' }
-        if (value < 55) return { status: 'Neutral', color: '#3b82f6' }
-        if (value < 70) return { status: 'Bullish', color: '#22c55e' }
-        return { status: 'Euphoric', color: '#00ff88' }
+      case 'volatilityIndex':
+        if (value < 20) return { status: 'Low Risk', color: '#22c55e', description: 'Stable market conditions' }
+        if (value < 40) return { status: 'Moderate', color: '#3b82f6', description: 'Normal market fluctuations' }
+        if (value < 60) return { status: 'Elevated', color: '#f59e0b', description: 'Increased market uncertainty' }
+        if (value < 80) return { status: 'High Risk', color: '#ef4444', description: 'Significant volatility detected' }
+        return { status: 'Extreme', color: '#dc2626', description: 'Market turbulence warning' }
+      case 'liquidityFlow':
+        if (value < 20) return { status: 'Thin', color: '#ef4444', description: 'Low trading activity' }
+        if (value < 40) return { status: 'Moderate', color: '#f59e0b', description: 'Average liquidity levels' }
+        if (value < 60) return { status: 'Healthy', color: '#3b82f6', description: 'Good market depth' }
+        if (value < 80) return { status: 'Strong', color: '#22c55e', description: 'High trading volume' }
+        return { status: 'Exceptional', color: '#00ff88', description: 'Peak market activity' }
+      case 'momentumStrength':
+        if (value < 20) return { status: 'Heavy Selling', color: '#dc2626', description: 'Strong bearish pressure' }
+        if (value < 40) return { status: 'Bearish', color: '#ef4444', description: 'Selling dominates' }
+        if (value < 60) return { status: 'Balanced', color: '#3b82f6', description: 'Market equilibrium' }
+        if (value < 80) return { status: 'Bullish', color: '#22c55e', description: 'Buying pressure building' }
+        return { status: 'Strong Rally', color: '#00ff88', description: 'Powerful upward momentum' }
+      case 'marketDominance':
+        if (value < 40) return { status: 'Distributed', color: '#22c55e', description: 'Healthy market diversity' }
+        if (value < 55) return { status: 'Balanced', color: '#3b82f6', description: 'Normal concentration' }
+        if (value < 70) return { status: 'Concentrated', color: '#f59e0b', description: 'Top coins dominate' }
+        return { status: 'Monopolistic', color: '#ef4444', description: 'High concentration risk' }
     }
   }
   
@@ -146,88 +153,100 @@ const CryptoPulse = () => {
         className="glass rounded-2xl p-8"
       >
         <div className="flex items-center gap-3 mb-6">
-          <Heart className="w-8 h-8 text-red-500 animate-pulse" />
-          <h2 className="text-3xl font-bold">Market Pulse Monitor</h2>
+          <Activity className="w-8 h-8 text-purple-500" />
+          <h2 className="text-3xl font-bold">Market Pulse Analytics</h2>
+          <span className="ml-auto text-sm opacity-60">Real-Time Trading Metrics</span>
         </div>
         
-        {/* EKG Display */}
-        <div className="relative h-48 bg-black/50 rounded-xl overflow-hidden mb-8">
+        {/* Market Rhythm Display */}
+        <div className="relative h-48 bg-black/50 rounded-xl overflow-hidden mb-8 border border-purple-500/20">
           <canvas
             ref={canvasRef}
             className="absolute inset-0 w-full h-full"
           />
-          <div className="absolute top-4 right-4 text-xs opacity-70">
-            LIVE FEED
+          <div className="absolute top-4 left-4 text-xs">
+            <span className="text-purple-400">MARKET RHYTHM</span>
+          </div>
+          <div className="absolute top-4 right-4 text-xs">
+            <span className="text-green-400 animate-pulse">● LIVE</span>
           </div>
         </div>
         
-        {/* Vital Signs */}
+        {/* Financial Metrics */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           <motion.div
-            className="bg-black/30 rounded-xl p-6"
+            className="bg-gradient-to-br from-purple-900/20 to-blue-900/20 rounded-xl p-6 border border-purple-500/20"
             whileHover={{ scale: 1.02 }}
           >
             <div className="flex items-center justify-between mb-2">
-              <Heart className="w-5 h-5 text-red-500" />
-              <span className="text-xs opacity-60">BPM</span>
+              <TrendingUp className="w-5 h-5 text-purple-400" />
+              <span className="text-xs opacity-60">VIX</span>
             </div>
-            <p className="text-3xl font-bold mb-1">{Math.round(marketVitals.heartRate)}</p>
-            <p className="text-sm" style={{ color: getVitalStatus('heartRate', marketVitals.heartRate).color }}>
-              {getVitalStatus('heartRate', marketVitals.heartRate).status}
+            <p className="text-3xl font-bold mb-1">{marketVitals.volatilityIndex.toFixed(1)}</p>
+            <p className="text-sm font-semibold" style={{ color: getVitalStatus('volatilityIndex', marketVitals.volatilityIndex).color }}>
+              {getVitalStatus('volatilityIndex', marketVitals.volatilityIndex).status}
             </p>
-            <p className="text-xs opacity-60 mt-2">Market Volatility</p>
+            <p className="text-xs opacity-60 mt-2">
+              {getVitalStatus('volatilityIndex', marketVitals.volatilityIndex).description}
+            </p>
           </motion.div>
           
           <motion.div
-            className="bg-black/30 rounded-xl p-6"
+            className="bg-gradient-to-br from-blue-900/20 to-cyan-900/20 rounded-xl p-6 border border-blue-500/20"
             whileHover={{ scale: 1.02 }}
           >
             <div className="flex items-center justify-between mb-2">
-              <Activity className="w-5 h-5 text-blue-500" />
-              <span className="text-xs opacity-60">mmHg</span>
+              <DollarSign className="w-5 h-5 text-blue-400" />
+              <span className="text-xs opacity-60">FLOW</span>
             </div>
-            <p className="text-3xl font-bold mb-1">{Math.round(marketVitals.pressure)}</p>
-            <p className="text-sm" style={{ color: getVitalStatus('pressure', marketVitals.pressure).color }}>
-              {getVitalStatus('pressure', marketVitals.pressure).status}
+            <p className="text-3xl font-bold mb-1">{marketVitals.liquidityFlow.toFixed(1)}%</p>
+            <p className="text-sm font-semibold" style={{ color: getVitalStatus('liquidityFlow', marketVitals.liquidityFlow).color }}>
+              {getVitalStatus('liquidityFlow', marketVitals.liquidityFlow).status}
             </p>
-            <p className="text-xs opacity-60 mt-2">Trading Volume</p>
+            <p className="text-xs opacity-60 mt-2">
+              {getVitalStatus('liquidityFlow', marketVitals.liquidityFlow).description}
+            </p>
           </motion.div>
           
           <motion.div
-            className="bg-black/30 rounded-xl p-6"
+            className="bg-gradient-to-br from-green-900/20 to-emerald-900/20 rounded-xl p-6 border border-green-500/20"
             whileHover={{ scale: 1.02 }}
           >
             <div className="flex items-center justify-between mb-2">
-              <Zap className="w-5 h-5 text-yellow-500" />
-              <span className="text-xs opacity-60">%</span>
+              <Zap className="w-5 h-5 text-yellow-400" />
+              <span className="text-xs opacity-60">MOM</span>
             </div>
-            <p className="text-3xl font-bold mb-1">{Math.round(marketVitals.energy)}</p>
-            <p className="text-sm" style={{ color: getVitalStatus('energy', marketVitals.energy).color }}>
-              {getVitalStatus('energy', marketVitals.energy).status}
+            <p className="text-3xl font-bold mb-1">{marketVitals.momentumStrength.toFixed(0)}%</p>
+            <p className="text-sm font-semibold" style={{ color: getVitalStatus('momentumStrength', marketVitals.momentumStrength).color }}>
+              {getVitalStatus('momentumStrength', marketVitals.momentumStrength).status}
             </p>
-            <p className="text-xs opacity-60 mt-2">Market Energy</p>
+            <p className="text-xs opacity-60 mt-2">
+              {getVitalStatus('momentumStrength', marketVitals.momentumStrength).description}
+            </p>
           </motion.div>
           
           <motion.div
-            className="bg-black/30 rounded-xl p-6"
+            className="bg-gradient-to-br from-pink-900/20 to-red-900/20 rounded-xl p-6 border border-pink-500/20"
             whileHover={{ scale: 1.02 }}
           >
             <div className="flex items-center justify-between mb-2">
-              <TrendingUp className="w-5 h-5 text-green-500" />
-              <span className="text-xs opacity-60">%</span>
+              <BarChart3 className="w-5 h-5 text-pink-400" />
+              <span className="text-xs opacity-60">DOM</span>
             </div>
-            <p className="text-3xl font-bold mb-1">{Math.round(marketVitals.momentum)}</p>
-            <p className="text-sm" style={{ color: getVitalStatus('momentum', marketVitals.momentum).color }}>
-              {getVitalStatus('momentum', marketVitals.momentum).status}
+            <p className="text-3xl font-bold mb-1">{marketVitals.marketDominance.toFixed(0)}%</p>
+            <p className="text-sm font-semibold" style={{ color: getVitalStatus('marketDominance', marketVitals.marketDominance).color }}>
+              {getVitalStatus('marketDominance', marketVitals.marketDominance).status}
             </p>
-            <p className="text-xs opacity-60 mt-2">Bull Momentum</p>
+            <p className="text-xs opacity-60 mt-2">
+              {getVitalStatus('marketDominance', marketVitals.marketDominance).description}
+            </p>
           </motion.div>
         </div>
         
-        <div className="mt-6 p-4 bg-black/20 rounded-lg">
+        <div className="mt-6 p-4 bg-black/20 rounded-lg border border-purple-500/10">
           <p className="text-sm opacity-70 text-center">
-            The Crypto Pulse Monitor tracks market health in real-time, converting trading data into vital signs.
-            Just like a medical monitor, it helps diagnose the overall condition of the cryptocurrency market.
+            Advanced market analytics combining volatility index, liquidity flow analysis, momentum indicators, 
+            and dominance metrics to provide real-time trading insights.
           </p>
         </div>
       </motion.div>
