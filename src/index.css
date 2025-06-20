@@ -35,6 +35,13 @@ body {
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
+.glass-alt {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
 .glass-dark {
   background: rgba(0, 0, 0, 0.3);
   backdrop-filter: blur(20px);
@@ -120,6 +127,23 @@ body {
   100% {
     transform: translateX(-50px);
   }
+}
+
+/* Floating animation */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0) translateX(0);
+  }
+  33% {
+    transform: translateY(-20px) translateX(10px);
+  }
+  66% {
+    transform: translateY(10px) translateX(-10px);
+  }
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
 }
 
 /* Custom scrollbar styles */
