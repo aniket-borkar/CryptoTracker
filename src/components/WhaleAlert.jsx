@@ -140,150 +140,148 @@ const WhaleAlert = () => {
   }
   
   return (
-    <div className="w-full max-w-6xl mx-auto p-8">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="glass rounded-3xl p-8"
-      >
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h2 className="text-4xl font-bold mb-2 text-glow">Whale Alert Sonar</h2>
-            <p className="text-white/70">Tracking large crypto movements in real-time</p>
-          </div>
-          <div className="flex items-center gap-2">
-            <Radio className="animate-pulse text-blue-400" size={24} />
-            <span className="text-sm opacity-70">Active Scanning</span>
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="glass rounded-3xl p-8 w-full max-w-6xl"
+    >
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <h2 className="text-4xl font-bold mb-2 text-glow">Whale Alert Sonar</h2>
+          <p className="text-white/70">Tracking large crypto movements in real-time</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Radio className="animate-pulse text-blue-400" size={24} />
+          <span className="text-sm opacity-70">Active Scanning</span>
+        </div>
+      </div>
+      
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Sonar Display */}
+        <div className="relative">
+          <canvas
+            ref={canvasRef}
+            width={400}
+            height={400}
+            className="w-full max-w-md mx-auto"
+          />
+          
+          {/* Legend */}
+          <div className="mt-4 flex justify-center gap-6 text-sm">
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full bg-green-500"></div>
+              <span className="opacity-70">Buy Pressure</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full bg-red-500"></div>
+              <span className="opacity-70">Sell Pressure</span>
+            </div>
           </div>
         </div>
         
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Sonar Display */}
-          <div className="relative">
-            <canvas
-              ref={canvasRef}
-              width={400}
-              height={400}
-              className="w-full max-w-md mx-auto"
-            />
-            
-            {/* Legend */}
-            <div className="mt-4 flex justify-center gap-6 text-sm">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-green-500"></div>
-                <span className="opacity-70">Buy Pressure</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-red-500"></div>
-                <span className="opacity-70">Sell Pressure</span>
-              </div>
-            </div>
-          </div>
+        {/* Whale Activity Feed */}
+        <div className="space-y-4">
+          <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
+            <Waves size={20} />
+            Recent Whale Activity
+          </h3>
           
-          {/* Whale Activity Feed */}
-          <div className="space-y-4">
-            <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
-              <Waves size={20} />
-              Recent Whale Activity
-            </h3>
-            
-            <div className="space-y-3 max-h-96 overflow-y-auto pr-2 custom-scrollbar">
-              <AnimatePresence>
-                {whaleMovements.map((whale, index) => (
-                  <motion.div
-                    key={`${whale.id}-${whale.timestamp}`}
-                    initial={{ opacity: 0, x: 50 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -50 }}
-                    transition={{ delay: index * 0.1 }}
-                    className={`glass-alt rounded-xl p-4 border ${
-                      whale.type === 'buy' 
-                        ? 'border-green-500/30' 
-                        : 'border-red-500/30'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <img 
-                          src={whale.icon} 
-                          alt={whale.name}
-                          className="w-8 h-8 rounded-full"
-                        />
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <span className="font-semibold">{whale.symbol.toUpperCase()}</span>
-                            <span className={`text-xs px-2 py-1 rounded-full ${
-                              whale.type === 'buy' 
-                                ? 'bg-green-500/20 text-green-400' 
-                                : 'bg-red-500/20 text-red-400'
-                            }`}>
-                              {whale.type.toUpperCase()}
-                            </span>
-                          </div>
-                          <p className="text-sm opacity-70">{getWhaleSize(whale.amount)}</p>
+          <div className="space-y-3 max-h-96 overflow-y-auto pr-2 custom-scrollbar">
+            <AnimatePresence>
+              {whaleMovements.map((whale, index) => (
+                <motion.div
+                  key={`${whale.id}-${whale.timestamp}`}
+                  initial={{ opacity: 0, x: 50 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -50 }}
+                  transition={{ delay: index * 0.1 }}
+                  className={`glass-alt rounded-xl p-4 border ${
+                    whale.type === 'buy' 
+                      ? 'border-green-500/30' 
+                      : 'border-red-500/30'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <img 
+                        src={whale.icon} 
+                        alt={whale.name}
+                        className="w-8 h-8 rounded-full"
+                      />
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-semibold">{whale.symbol.toUpperCase()}</span>
+                          <span className={`text-xs px-2 py-1 rounded-full ${
+                            whale.type === 'buy' 
+                              ? 'bg-green-500/20 text-green-400' 
+                              : 'bg-red-500/20 text-red-400'
+                          }`}>
+                            {whale.type.toUpperCase()}
+                          </span>
                         </div>
-                      </div>
-                      <div className="text-right">
-                        <p className="font-semibold">{formatNumber(whale.amount)}</p>
-                        <p className="text-xs opacity-70">Volume 24h</p>
+                        <p className="text-sm opacity-70">{getWhaleSize(whale.amount)}</p>
                       </div>
                     </div>
-                    
-                    {whale.priceImpact > 5 && (
-                      <div className="mt-2 flex items-center gap-2 text-xs text-yellow-400">
-                        <AlertTriangle size={14} />
-                        <span>High price impact: {whale.priceImpact.toFixed(1)}%</span>
-                      </div>
-                    )}
-                  </motion.div>
-                ))}
-              </AnimatePresence>
-            </div>
-            
-            {/* Whale Statistics */}
-            <div className="mt-6 grid grid-cols-2 gap-4">
-              <div className="glass-alt rounded-xl p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <TrendingUp className="text-green-400" size={20} />
-                  <span className="text-sm opacity-70">Buy Whales</span>
-                </div>
-                <p className="text-2xl font-bold text-green-400">
-                  {whaleMovements.filter(w => w.type === 'buy').length}
-                </p>
-              </div>
-              <div className="glass-alt rounded-xl p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <Activity className="text-red-400" size={20} />
-                  <span className="text-sm opacity-70">Sell Whales</span>
-                </div>
-                <p className="text-2xl font-bold text-red-400">
-                  {whaleMovements.filter(w => w.type === 'sell').length}
-                </p>
-              </div>
-            </div>
+                    <div className="text-right">
+                      <p className="font-semibold">{formatNumber(whale.amount)}</p>
+                      <p className="text-xs opacity-70">Volume 24h</p>
+                    </div>
+                  </div>
+                  
+                  {whale.priceImpact > 5 && (
+                    <div className="mt-2 flex items-center gap-2 text-xs text-yellow-400">
+                      <AlertTriangle size={14} />
+                      <span>High price impact: {whale.priceImpact.toFixed(1)}%</span>
+                    </div>
+                  )}
+                </motion.div>
+              ))}
+            </AnimatePresence>
           </div>
-        </div>
-        
-        {/* Alert Banner */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="mt-8 p-4 rounded-xl bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-blue-500/20"
-        >
-          <div className="flex items-center gap-3">
-            <Anchor className="text-blue-400" size={24} />
-            <div>
-              <p className="font-semibold">Whale Activity Analysis</p>
-              <p className="text-sm opacity-70">
-                Large volume movements detected. {whaleMovements.filter(w => w.type === 'buy').length > whaleMovements.filter(w => w.type === 'sell').length 
-                  ? 'Accumulation phase detected - whales are buying.' 
-                  : 'Distribution phase detected - whales are selling.'}
+          
+          {/* Whale Statistics */}
+          <div className="mt-6 grid grid-cols-2 gap-4">
+            <div className="glass-alt rounded-xl p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <TrendingUp className="text-green-400" size={20} />
+                <span className="text-sm opacity-70">Buy Whales</span>
+              </div>
+              <p className="text-2xl font-bold text-green-400">
+                {whaleMovements.filter(w => w.type === 'buy').length}
+              </p>
+            </div>
+            <div className="glass-alt rounded-xl p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <Activity className="text-red-400" size={20} />
+                <span className="text-sm opacity-70">Sell Whales</span>
+              </div>
+              <p className="text-2xl font-bold text-red-400">
+                {whaleMovements.filter(w => w.type === 'sell').length}
               </p>
             </div>
           </div>
-        </motion.div>
+        </div>
+      </div>
+      
+      {/* Alert Banner */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="mt-8 p-4 rounded-xl bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-blue-500/20"
+      >
+        <div className="flex items-center gap-3">
+          <Anchor className="text-blue-400" size={24} />
+          <div>
+            <p className="font-semibold">Whale Activity Analysis</p>
+            <p className="text-sm opacity-70">
+              Large volume movements detected. {whaleMovements.filter(w => w.type === 'buy').length > whaleMovements.filter(w => w.type === 'sell').length 
+                ? 'Accumulation phase detected - whales are buying.' 
+                : 'Distribution phase detected - whales are selling.'}
+            </p>
+          </div>
+        </div>
       </motion.div>
-    </div>
+    </motion.div>
   )
 }
 

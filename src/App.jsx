@@ -49,7 +49,7 @@ const NavMenu = () => {
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
-            className="absolute top-full mt-2 right-0 glass rounded-xl p-2 min-w-[200px] z-50"
+            className="absolute top-full mt-2 right-0 glass rounded-xl p-2 min-w-[200px] z-[100]"
           >
             {navItems.map((item) => (
               <Link
@@ -122,11 +122,13 @@ function AppContent() {
       <Starfield />
       <div className="relative z-10">
         <div className="sticky top-0 z-50 backdrop-blur-md bg-black/20 border-b border-white/10">
-          <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-            <Link to="/" className="text-2xl font-bold text-glow hover:scale-105 transition-transform">
-              Crypto Cosmos
-            </Link>
-            <NavMenu />
+          <div className="container mx-auto px-4">
+            <div className="max-w-7xl mx-auto py-4 flex items-center justify-between">
+              <Link to="/" className="text-2xl font-bold text-glow hover:scale-105 transition-transform">
+                Crypto Cosmos
+              </Link>
+              <NavMenu />
+            </div>
           </div>
         </div>
         
@@ -140,28 +142,42 @@ function AppContent() {
           } />
           <Route path="/constellation" element={<CryptoConstellation />} />
           <Route path="/mood-ring" element={
-            <div className="container mx-auto px-4 py-8">
+            <div className="flex items-center justify-center min-h-[calc(100vh-80px)]">
               <MarketMoodRing />
             </div>
           } />
           <Route path="/pulse" element={
-            <div className="container mx-auto px-4 py-8">
+            <div className="flex items-center justify-center min-h-[calc(100vh-80px)]">
               <CryptoPulse />
             </div>
           } />
           <Route path="/weather" element={
-            <div className="container mx-auto px-4 py-8">
+            <div className="flex items-center justify-center min-h-[calc(100vh-80px)]">
               <CryptoWeather />
             </div>
           } />
           <Route path="/rhythm" element={
             <div className="container mx-auto px-4 py-8">
-              <PriceRhythmVisualizer />
+              <div className="flex items-center justify-center">
+                <PriceRhythmVisualizer />
+              </div>
             </div>
           } />
-          <Route path="/whale-alert" element={<WhaleAlert />} />
-          <Route path="/time-travel" element={<TimeTravelMachine />} />
-          <Route path="/sentiment" element={<SentimentAurora />} />
+          <Route path="/whale-alert" element={
+            <div className="flex items-center justify-center min-h-[calc(100vh-80px)]">
+              <WhaleAlert />
+            </div>
+          } />
+          <Route path="/time-travel" element={
+            <div className="flex items-center justify-center min-h-[calc(100vh-80px)]">
+              <TimeTravelMachine />
+            </div>
+          } />
+          <Route path="/sentiment" element={
+            <div className="flex items-center justify-center min-h-[calc(100vh-80px)]">
+              <SentimentAurora />
+            </div>
+          } />
         </Routes>
       </div>
       
