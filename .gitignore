@@ -39,6 +39,6 @@ build/
 Thumbs.db
 
 # Package manager files
-package-lock.json
+# package-lock.json is needed for npm ci in GitHub Actions
 yarn.lock
 pnpm-lock.yaml 
